@@ -109,46 +109,100 @@ To mitigate HTTP/1.1’s limitations, developers used strategies such as:
 These methods helped reduce the number of HTTP requests, improving page load times despite HTTP/1.1’s limitations.
 
 
-
 ## HTTP/2
 
-**HTTP/2** was designed to address the performance limitations of HTTP/1.1 and bring modern improvements to web communication.
-
-### Key Features
-
-- **Binary Framing Layer**:  
-  Unlike previous versions that used plain text, HTTP/2 uses a **binary format**.  
-  - Messages are broken into small units called **frames**.
-  - These frames are handled by the binary framing layer and transmitted over a single TCP connection.
-
-- **Full Request and Response Multiplexing**:  
-  HTTP/2 allows multiple requests and responses to be in flight at the same time over a single connection.  
-  - Messages are split into frames.
-  - These frames can be interleaved during transmission and then reassembled on the other end.  
-  - This eliminates the **head-of-line blocking** issue of HTTP/1.1.
-
-- **Stream Prioritization**:  
-  HTTP/2 allows developers to assign **priority levels** to different requests.  
-  - Higher-priority requests receive more frames from the server.
-  - For example, a request for a critical CSS file may be given higher priority than an image.
-
-- **Server Push**:  
-  The server can **proactively send resources** the client is likely to need, even before the client explicitly requests them.  
-  - For example, if the client requests an HTML page, the server might also push the associated CSS and JS files.
-
-- **Header Compression (HPACK)**:  
-  HTTP/2 introduces **HPACK**, a mechanism to compress HTTP headers.  
-  - In HTTP/1.1, headers were sent in plain text for every request.
-  - HPACK compresses headers and maintains a table of previously seen headers to improve future compression.
+HTTP/2 was designed to overcome performance limitations of HTTP/1.1 while preserving the existing semantics (i.e., same methods, status codes, and URIs). It brought major architectural changes to optimize how data is sent between client and server.
 
 ---
 
-### Summary
+### 🔒 Secure by Default
 
-HTTP/2 dramatically improves performance with:
-- Efficient use of a single connection
-- Reduced latency
-- Smarter resource loading
-- Compressed and optimized metadata (headers)
+While HTTP/2 **does not strictly require TLS**, **all major browsers only support HTTP/2 over HTTPS**. This means that in practical use, HTTP/2 is **secure by default**.
 
-These advancements make HTTP/2 a major step forward for faster, more reliable web experiences.
+- Browsers like Chrome, Firefox, Safari, and Edge will **not establish an HTTP/2 connection unless it uses TLS (HTTPS)**.
+- HTTP/2 connections use modern cipher suites and TLS extensions that improve both **security and performance**.
+
+---
+
+### 🔁 Protocol Negotiation During TLS (ALPN)
+
+HTTP/2 relies on **ALPN (Application-Layer Protocol Negotiation)** during the **TLS handshake** to negotiate whether the client and server both support HTTP/2.
+
+- During the TLS handshake, the client advertises supported protocols (like `h2` for HTTP/2 or `http/1.1`).
+- If the server supports HTTP/2, it responds with `h2`, and the connection continues using HTTP/2.
+- If not, the server falls back to HTTP/1.1.
+
+**Why ALPN Matters:**
+- Avoids sending an HTTP/1.1 request only to upgrade later.
+- Faster and cleaner protocol switching.
+- Improves initial connection time.
+
+---
+
+### 🔄 Binary Framing Layer
+
+HTTP/2 introduces a **binary framing layer**:
+- HTTP messages (requests and responses) are split into **binary-encoded frames**.
+- These frames are then multiplexed and transmitted over a single TCP connection.
+- This is a big change from HTTP/1.x, which sent messages as plain text.
+
+---
+
+### 🔁 Full Multiplexing
+
+- **Multiple requests and responses can be in flight at the same time over one connection.**
+- These are broken into frames and interleaved.
+- Solves the **Head-of-Line (HOL) blocking** problem in HTTP/1.1 where one blocked request delayed others.
+
+---
+
+### 🎯 Stream Prioritization
+
+- Streams can be **assigned priorities and dependencies**.
+- The server can allocate resources more efficiently:
+  - High-priority streams get more bandwidth.
+  - Useful for progressive rendering of web pages (e.g., prioritize CSS before images).
+
+---
+
+### 📦 Server Push
+
+- The server can **proactively send resources** to the client **before** the client explicitly requests them.
+- Example: If the client requests an HTML page, the server can also push the linked CSS and JS files.
+- This reduces the number of round-trips and improves load time.
+
+---
+
+### 📉 Header Compression
+
+- HTTP/1.x sent repetitive headers with each request/response (e.g., cookies, user-agent).
+- HTTP/2 uses **HPACK**, a binary header compression format that:
+  - Compresses headers using Huffman coding.
+  - Maintains a shared header table between client and server.
+  - Sends smaller deltas for recurring headers.
+
+---
+
+### 🧠 Summary of Key Features
+
+| Feature              | HTTP/1.1              | HTTP/2                        |
+|----------------------|-----------------------|-------------------------------|
+| Protocol Format       | Text                  | Binary                        |
+| Multiplexing          | ❌ No                 | ✅ Yes                         |
+| Header Compression    | ❌ No (plaintext)     | ✅ Yes (HPACK)                |
+| Server Push           | ❌ No                 | ✅ Yes                         |
+| Stream Prioritization | ❌ No                 | ✅ Yes                         |
+| Secure by Default     | ❌ Optional           | ✅ Practically required       |
+| Protocol Negotiation  | ❌ Upgrade header     | ✅ ALPN during TLS handshake  |
+
+---
+
+### 🌐 Real-World Impact
+
+- Faster page loads, especially on high-latency networks.
+- Fewer TCP connections = less overhead = better use of network resources.
+- Significant performance improvement on mobile and low-bandwidth devices.
+
+---
+
+**Note**: HTTP/2 still uses TCP under the hood, so **TCP Head-of-Line blocking** (at the packet level) is still a limitation. This is addressed in **HTTP/3**, which is based on QUIC (UDP).
