@@ -1,11 +1,14 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator, computed_field
+from pydantic import BaseModel, ConfigDict
 from typing import Dict, List, Optional, TYPE_CHECKING
 from datetime import datetime
 
-if TYPE_CHECKING:
-    from .models import Address
+class Address(BaseModel):
+    street: str
+    city: str
+    postal_code: str
+    
 
 class User(BaseModel):
     id: int
@@ -16,3 +19,8 @@ class User(BaseModel):
     address: Address
     tags: List[str] = []
     
+    model_config = ConfigDict(
+        json_encoders={datetime: lambda v: v.strftime('%d-%m-%Y')},
+        str_to_lower=True
+    )
+ 

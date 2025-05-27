@@ -88,7 +88,7 @@ class Booking(BaseModel):
         return self.nights * self.rate_night
     
 class Address(BaseModel):
-    street: set
+    street: str
     city: str
     postal_code: str
     
